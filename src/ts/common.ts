@@ -806,6 +806,29 @@ on('update-entity-body', (el: HTMLElement) => {
   });
 });
 
+// APPEND LOG ENTRY: insert a timestamped heading at the end of the body and auto-save
+on('append-log-entry', () => {
+  const editor = getEditor();
+  const now = DateTime.now();
+  const timestamp = now.toFormat('yyyy-MM-dd HH:mm');
+
+  if (editor.type === 'tiny') {
+    // TinyMCE: get current content, append log entry, replace all
+    const currentContent = editor.getContent();
+    const logHtml = `<hr><h3>${timestamp}</h3><p>&nbsp;</p>`;
+    editor.replaceContent(currentContent + logHtml);
+  } else {
+    // Markdown: append timestamped heading
+    const textarea = document.getElementById('body_area') as HTMLTextAreaElement;
+    const logMd = `\n\n---\n### ${timestamp}\n\n`;
+    textarea.value += logMd;
+    textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
+    textarea.focus();
+  }
+  // Auto-save after inserting
+  updateEntityBody();
+});
+
 on('search-pubchem', (el: HTMLElement) => {
   const inputEl = el.parentElement.parentElement.querySelector('input') as HTMLInputElement;
   if (!inputEl.checkValidity()) {
@@ -1047,6 +1070,19 @@ on('create-entity', async (el: HTMLElement, event: Event) => {
     await ApiC.post(`${el.dataset.type}/${id}/compounds_links/${params['compound']}`, {});
   }
   window.location.href = `${page}?mode=edit&id=${id}`;
+});
+
+// CREATE MONTHLY LOG: create a new resource item titled "Log — Month Year" with template body
+on('create-monthly-log', async () => {
+  const now = DateTime.now();
+  const title = now.toFormat('yyyyMM') + '-log';
+  // Create a new resource (items) with the monthly log title
+  const id = await ApiC.post2location('items', {title: title});
+  // Set initial body with a welcome entry
+  const timestamp = now.toFormat('yyyy-MM-dd HH:mm');
+  const body = `<h2>${title}</h2><hr><h3>${timestamp}</h3><p>&nbsp;</p>`;
+  await ApiC.patch(`items/${id}`, {body: body});
+  window.location.href = `database.php?mode=edit&id=${id}`;
 });
 
 on('report-bug', (el: HTMLElement, event: Event) => {

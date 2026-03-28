@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const parentId = parentSelect.value ? parseInt(parentSelect.value, 10) : null;
-    ApiC.post('api/v2/experiments_folders', {
+    ApiC.post('experiments_folders', {
       name: name,
       parent_id: parentId,
     }).then(() => {
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const currentName = target.dataset.name;
       const newName = prompt('Enter new folder name:', currentName);
       if (newName && newName.trim() !== '' && newName !== currentName) {
-        ApiC.patch(`api/v2/experiments_folders/${folderId}`, {
+        ApiC.patch(`experiments_folders/${folderId}`, {
           name: newName.trim(),
         }).then(() => {
           window.location.reload();
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const target = event.currentTarget as HTMLElement;
       const folderId = target.dataset.id;
       if (confirm('Delete this folder? Experiments inside it will be moved to Unfiled.')) {
-        ApiC.delete(`api/v2/experiments_folders/${folderId}`).then(() => {
+        ApiC.delete(`experiments_folders/${folderId}`).then(() => {
           window.location.reload();
         });
       }
