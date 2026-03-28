@@ -46,6 +46,7 @@ module.exports = (env) => {
         './src/ts/toolbar.ts',
         './src/ts/editusers.ts',
         './src/ts/show.ts',
+        './src/ts/experiments-folders.ts',
         './src/ts/sysconfig.ts',
         './src/ts/opencloning.ts',
         'bootstrap/js/src/alert.js',

@@ -56,6 +56,7 @@ use Elabftw\Models\ProcurementRequests;
 use Elabftw\Models\RequestActions;
 use Elabftw\Models\ResourcesCategories;
 use Elabftw\Models\Revisions;
+use Elabftw\Models\ExperimentsFolders;
 use Elabftw\Models\Scheduler;
 use Elabftw\Models\SigKeys;
 use Elabftw\Models\Steps;
@@ -317,6 +318,7 @@ final class Apiv2Controller extends AbstractApiController
                 trim($this->Request->query->getString('q')),
                 $this->Request->query->getInt('limit'),
             ),
+            ApiEndpoint::ExperimentsFolders => new ExperimentsFolders($this->requester, $this->id),
             ApiEndpoint::FavTags => new FavTags($this->requester, $this->id),
             ApiEndpoint::Reports => new ReportsHandler($this->requester),
             ApiEndpoint::StorageUnits => new StorageUnits($this->requester, Config::getConfig()->configArr['inventory_require_edit_rights'] === '1', $this->id),

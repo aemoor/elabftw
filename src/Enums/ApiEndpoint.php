@@ -22,6 +22,7 @@ enum ApiEndpoint: string
     case Config = 'config';
     case Dspace = 'dspace';
     case Experiments = 'experiments';
+    case ExperimentsFolders = 'experiments_folders';
     case ExperimentsTemplates = 'experiments_templates';
     case Export = 'exports';
     case ExtraFieldsKeys = 'extra_fields_keys';

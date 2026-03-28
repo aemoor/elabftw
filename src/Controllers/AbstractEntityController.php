@@ -34,6 +34,7 @@ use Elabftw\Models\ItemsStatus;
 use Elabftw\Models\ItemsTypes;
 use Elabftw\Models\ProcurementRequests;
 use Elabftw\Models\RequestActions;
+use Elabftw\Models\ExperimentsFolders;
 use Elabftw\Models\StorageUnits;
 use Elabftw\Models\TeamGroups;
 use Elabftw\Models\TeamTags;
@@ -149,10 +150,13 @@ abstract class AbstractEntityController implements ControllerInterface
         $template = 'show.html';
         $UserRequestActions = new UserRequestActions($this->App->Users);
 
+        $ExperimentsFolders = new ExperimentsFolders($this->App->Users);
+
         $renderArr = array(
             'DisplayParams' => $DisplayParams,
             'Entity' => $this->Entity,
             'categoryArr' => $this->categoryArr,
+            'experimentsFoldersArr' => $ExperimentsFolders->readAllRecursive(),
             'statusArr' => $this->statusArr,
             'favTagsArr' => $favTagsArr,
             'itemsArr' => $itemsArr,
@@ -244,6 +248,8 @@ abstract class AbstractEntityController implements ControllerInterface
         $ItemsTypes = new ItemsTypes($this->App->Users);
         $DisplayParamsTemplates = new DisplayParams($this->App->Users, EntityType::Templates);
         $DisplayParamsItemsTypes = new DisplayParams($this->App->Users, EntityType::ItemsTypes);
+        $ExperimentsFoldersEdit = new ExperimentsFolders($this->App->Users);
+
         $renderArr = array(
             'categoryArr' => $this->categoryArr,
             'classificationArr' => $this->classificationArr,
@@ -251,6 +257,7 @@ abstract class AbstractEntityController implements ControllerInterface
             'Entity' => $this->Entity,
             'entityProcurementRequestsArr' => $ProcurementRequests->readActiveForEntity($this->Entity->id ?? 0),
             'entityRequestActionsArr' => $RequestActions->readAllFull(),
+            'experimentsFoldersArr' => $ExperimentsFoldersEdit->readHierarchyRows(),
             'hideTitle' => true,
             'metadataGroups' => $Metadata->getGroups(),
             'mode' => 'edit',
