@@ -47,7 +47,7 @@ try {
             LEFT JOIN users ON items.userid = users.userid
             WHERE items.team = :team
                 AND items.state = 1
-                AND items.title REGEXP '^[0-9]{6}-log$'
+                AND items.title REGEXP '^[0-9]{6}-log'
             ORDER BY users.lastname ASC, users.firstname ASC, items.title DESC";
     $req = $Db->prepare($sql);
     $req->bindParam(':team', $team, PDO::PARAM_INT);

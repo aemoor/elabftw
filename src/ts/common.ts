@@ -1075,7 +1075,9 @@ on('create-entity', async (el: HTMLElement, event: Event) => {
 // CREATE MONTHLY LOG: create a new resource item titled "Log — Month Year" with template body
 on('create-monthly-log', async () => {
   const now = DateTime.now();
-  const title = now.toFormat('yyyyMM') + '-log';
+  const user = await ApiC.getJson('users/me');
+  const owner = user.fullname.replace(/\s+/g, '-').toLowerCase();
+  const title = now.toFormat('yyyyMM') + '-log-' + owner;
   // Create a new resource (items) with the monthly log title
   const id = await ApiC.post2location('items', {title: title});
   // Set initial body with a welcome entry

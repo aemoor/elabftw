@@ -8,13 +8,13 @@
     <div class='mt-2'>
       {# "All experiments" link - no folder filter #}
       <div class='mb-1'>
-        <a href='experiments.php' class='text-decoration-none {{ not App.Request.query.get('folder') ? 'font-weight-bold' : '' }}'>
+        <a href='experiments.php' class='text-decoration-none color-medium {{ not App.Request.query.get('folder') ? 'font-weight-bold' : '' }}'>
           <i class='fas fa-flask fa-fw mr-1'></i>{{ 'All experiments'|trans }}
         </a>
       </div>
       {# "Unfiled" - experiments with no folder #}
       <div class='mb-1'>
-        <a href='experiments.php?folder=0' class='text-decoration-none {{ App.Request.query.get('folder') == '0' ? 'font-weight-bold' : '' }}'>
+        <a href='experiments.php?folder=0' class='text-decoration-none color-medium {{ App.Request.query.get('folder') == '0' ? 'font-weight-bold' : '' }}'>
           <i class='fas fa-inbox fa-fw mr-1'></i>{{ 'Unfiled'|trans }}
         </a>
       </div>
@@ -24,7 +24,7 @@
         {% if folders[parentId] is defined %}
           {% for folder in folders[parentId] %}
             <div class='ml-{{ depth > 0 ? 3 : 0 }} mb-1'>
-              <a href='experiments.php?folder={{ folder.id }}' class='text-decoration-none {{ currentFolderId == folder.id ? 'font-weight-bold' : '' }}'>
+              <a href='experiments.php?folder={{ folder.id }}' class='text-decoration-none color-medium {{ currentFolderId == folder.id ? 'font-weight-bold' : '' }}'>
                 <i class='fas {{ folder.children_count > 0 ? 'fa-folder-open' : 'fa-folder' }} fa-fw mr-1'></i>{{ folder.name }}
                 {% if folder.experiments_count > 0 %}
                   <span class='badge badge-secondary'>{{ folder.experiments_count }}</span>
@@ -47,7 +47,7 @@
 
     {# Create new folder form #}
     <div class='mt-3'>
-      <div class='input-group input-group-sm'>
+      <div class='input-group'>
         <input type='text' id='newFolderName' class='form-control' placeholder='{{ 'New folder name'|trans }}' aria-label='{{ 'New folder name'|trans }}' />
         <div class='input-group-append'>
           <button class='btn btn-outline-secondary' type='button' data-action='create-experiment-folder' title='{{ 'Create folder'|trans }}'>
@@ -56,7 +56,7 @@
         </div>
       </div>
       {# Optional: select parent folder #}
-      <select id='newFolderParent' class='form-control form-control-sm mt-1' aria-label='{{ 'Parent folder'|trans }}'>
+      <select id='newFolderParent' class='form-control mt-1' aria-label='{{ 'Parent folder'|trans }}'>
         <option value=''>{{ 'Root (no parent)'|trans }}</option>
         {% if experimentsFoldersArr is iterable %}
           {% for parentId, folders in experimentsFoldersArr %}
