@@ -93,6 +93,27 @@ CREATE TABLE `config` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `experiments_folders`
+--
+
+CREATE TABLE `experiments_folders` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `team` INT UNSIGNED NOT NULL,
+  `name` VARCHAR(255) NOT NULL,
+  `parent_id` INT UNSIGNED NULL DEFAULT NULL,
+  `userid` INT UNSIGNED NOT NULL,
+  `ordering` INT UNSIGNED DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`parent_id`) REFERENCES `experiments_folders`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`team`) REFERENCES `teams`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`userid`) REFERENCES `users`(`userid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `experiments`
 --
 
@@ -130,6 +151,7 @@ CREATE TABLE `experiments` (
   `hide_main_text` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   `state` int(10) UNSIGNED NOT NULL DEFAULT 1,
   `access_key` varchar(36) NULL DEFAULT NULL,
+  `folder_id` INT UNSIGNED NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 
@@ -1520,6 +1542,7 @@ ALTER TABLE `experiments`
   ADD KEY `fk_experiments_users_userid` (`userid`),
   ADD KEY `idx_experiments_state` (`state`),
   ADD KEY `fk_experiments_status_id` (`status`),
+  ADD KEY `fk_experiments_folder_id` (`folder_id`),
   ADD UNIQUE `unique_experiments_custom_id` (`category`, `custom_id`);
 
 --
@@ -1735,7 +1758,8 @@ ALTER TABLE `api_keys`
 --
 ALTER TABLE `experiments`
   ADD CONSTRAINT `fk_experiments_users_userid` FOREIGN KEY (`userid`) REFERENCES `users` (`userid`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_experiments_status_id` FOREIGN KEY (`status`) REFERENCES `experiments_status` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_experiments_status_id` FOREIGN KEY (`status`) REFERENCES `experiments_status` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_experiments_folder_id` FOREIGN KEY (`folder_id`) REFERENCES `experiments_folders` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `experiments_changelog`
