@@ -8,7 +8,7 @@
     <option value=''>{{ 'No folder (Unfiled)'|trans }}</option>
     {% for folder in experimentsFoldersArr %}
       <option value='{{ folder.id }}' {{ Entity.entityData.folder_id == folder.id ? 'selected' : '' }}>
-        {% for i in 1..folder.level_depth %}—{% endfor %}{% if folder.level_depth > 0 %} {% endif %}{{ folder.name }}
+        {{ folder.full_path }}
       </option>
     {% endfor %}
   </select>
