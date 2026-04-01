@@ -10,6 +10,7 @@ import { ApiC } from './api';
 import { Malle, InputType, SelectOptions } from '@deltablot/malle';
 import 'bootstrap/js/src/modal.js';
 import FavTag from './FavTag.class';
+import TocPanel from './TocPanel.class';
 import { clearLocalStorage, rememberLastSelected, selectLastSelected } from './localStorage';
 import {
   adjustHiddenState,
@@ -108,6 +109,7 @@ if (core.isAuth) {
 
 const FavTagC = new FavTag();
 const TodolistC = new Todolist();
+const TocPanelC = new TocPanel();
 
 const TableSortingC = new TableSorting();
 // for searching inputs, allow specific triggers for East & South East Asian characters
@@ -145,6 +147,9 @@ if (openedSidePanel === Model.FavTag) {
 }
 if (openedSidePanel === Model.Todolist) {
   TodolistC.toggle();
+}
+if (openedSidePanel === 'toc') {
+  TocPanelC.toggle();
 }
 
 // ACTIVATE REACTIVE COUNT OF .COUNTABLE ITEMS
@@ -527,11 +532,23 @@ on('scroll-top', () => {
 on('toggle-sidepanel', (el: HTMLElement, event: Event) => {
   // this action might exist on a link: prevent jump to top
   event.preventDefault();
-  const SidePanelC = el.dataset.target === Model.FavTag ? FavTagC : TodolistC;
+  let SidePanelC;
+  if (el.dataset.target === 'toc') {
+    SidePanelC = TocPanelC;
+  } else if (el.dataset.target === Model.FavTag) {
+    SidePanelC = FavTagC;
+  } else {
+    SidePanelC = TodolistC;
+  }
   if (el.dataset.purpose === 'hide') {
     return SidePanelC.hide();
   }
   SidePanelC.toggle();
+});
+
+// Refresh the TOC panel contents
+on('refresh-toc', () => {
+  TocPanelC.refresh();
 });
 
 on('toggle-pin', (el: HTMLElement) => {

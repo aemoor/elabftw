@@ -9,6 +9,7 @@ import { Model, Todoitem, EntityType, UnfinishedEntities } from './interfaces';
 import SidePanel from './SidePanel.class';
 import { relativeMoment, makeSortableGreatAgain, escapeHTML } from './misc';
 import FavTag from './FavTag.class';
+import TocPanel from './TocPanel.class';
 import { ApiC } from './api';
 import { Malle } from '@deltablot/malle';
 import i18next from './i18n';
@@ -100,8 +101,9 @@ export default class Todolist extends SidePanel {
 
   // TOGGLE TODOLIST VISIBILITY
   toggle(): void {
-    // force favtags to close if it's open
+    // force other panels to close
     (new FavTag).hide();
+    (new TocPanel).hide();
     super.toggle();
     // lazy load content only once
     if (!document.getElementById(this.panelId).hasAttribute('hidden') && this.initialLoad) {

@@ -36,6 +36,7 @@
 {% if App.Session.get('is_auth') and not App.Session.get('is_anon') %}
   {% include 'todolist-panel.html' %}
   {% include 'favtags-panel.html' %}
+  {% include 'toc-panel.html' %}
 {% endif %}
 
 {# FOOTER #}

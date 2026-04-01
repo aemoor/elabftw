@@ -975,6 +975,50 @@ tr:first-child td {
   }
 }
 
+/* TABLE OF CONTENTS panel */
+.toc-items-container {
+  .toc-list {
+    margin: 0;
+    padding: 0;
+  }
+
+  .toc-item {
+    margin: 0;
+  }
+
+  .toc-link {
+    color: var(--chrome-fg);
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.9em;
+
+    &:hover {
+      background-color: var(--disabled);
+      color: var(--chrome-fg);
+      text-decoration: none;
+    }
+
+    &.active {
+      background-color: var(--primary);
+      color: var(--white);
+      font-weight: bold;
+    }
+  }
+}
+
+/* Brief highlight animation when scrolling to a heading */
+.toc-highlight {
+  animation: toc-flash 1.5s ease-out;
+}
+
+@keyframes toc-flash {
+  0% { background-color: rgba(var(--primary-rgb, 0, 123, 255), 0.3); }
+  100% { background-color: transparent; }
+}
+
 .item-info {
   padding-left: 20px;
 }

@@ -1,6 +1,6 @@
 -- Schema 207
 -- Add hierarchical folders for experiments
-CREATE TABLE `experiments_folders` (
+CREATE TABLE IF NOT EXISTS `experiments_folders` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `team` INT UNSIGNED NOT NULL,
   `name` VARCHAR(255) NOT NULL,
@@ -15,9 +15,15 @@ CREATE TABLE `experiments_folders` (
   FOREIGN KEY (`userid`) REFERENCES `users`(`userid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Add folder_id column to experiments table
-ALTER TABLE `experiments`
-  ADD COLUMN `folder_id` INT UNSIGNED NULL DEFAULT NULL,
-  ADD CONSTRAINT `fk_experiments_folder_id` FOREIGN KEY (`folder_id`) REFERENCES `experiments_folders`(`id`) ON DELETE SET NULL;
+-- Add folder_id column to experiments table (idempotent: skip if column already exists)
+SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'experiments' AND COLUMN_NAME = 'folder_id');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE `experiments` ADD COLUMN `folder_id` INT UNSIGNED NULL DEFAULT NULL', 'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add foreign key (idempotent: skip if constraint already exists)
+CALL drop_fk_if_exists('experiments', 'folder_id');
+ALTER TABLE `experiments` ADD CONSTRAINT `fk_experiments_folder_id` FOREIGN KEY (`folder_id`) REFERENCES `experiments_folders`(`id`) ON DELETE SET NULL;
 
 UPDATE config SET conf_value = 207 WHERE conf_name = 'schema';

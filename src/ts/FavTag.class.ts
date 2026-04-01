@@ -8,6 +8,7 @@
 import { Model } from './interfaces';
 import SidePanel from './SidePanel.class';
 import TodoList from './Todolist.class';
+import TocPanel from './TocPanel.class';
 import { ApiC } from './api';
 
 export default class FavTag extends SidePanel {
@@ -23,8 +24,9 @@ export default class FavTag extends SidePanel {
   }
 
   toggle(): void {
-    // force todolist to close if it's open
+    // force other panels to close
     (new TodoList).hide();
+    (new TocPanel).hide();
     super.toggle();
   }
 }

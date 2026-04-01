@@ -65,7 +65,7 @@ import '../js/tinymce-langs/zh_CN.js';
 import '../js/tinymce-langs/zh_TW.js';
 import '../js/tinymce-plugins/mention/plugin.js';
 import { EntityType, Model } from './interfaces';
-import { reloadElements, escapeExtendedQuery, updateEntityBody, getNewIdFromPostRequest } from './misc';
+import { reloadElements, escapeExtendedQuery, updateEntityBody, getNewIdFromPostRequest, escapeHTML } from './misc';
 import { ApiC } from './api';
 import { isSortable } from './TableSorting.class';
 import { MathJaxObject } from 'mathjax-full/js/components/startup';
@@ -198,7 +198,7 @@ const imagesUploadHandler = (blobInfo: TinyMCEBlobInfo) => new Promise((resolve,
 // options for tinymce to pass to tinymce.init()
 export function getTinymceBaseConfig(page: string): object {
   let plugins = 'accordion advlist anchor autolink autoresize table searchreplace code fullscreen insertdatetime charmap lists save image media link pagebreak codesample template mention visualblocks visualchars emoticons preview';
-  let toolbar1 = 'custom-save preview | undo redo | styles fontsize bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | superscript subscript | bullist numlist outdent indent | forecolor backcolor | charmap emoticons adddate | codesample | link | sort-table';
+  let toolbar1 = 'custom-save preview | undo redo | styles fontsize bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | superscript subscript | bullist numlist outdent indent | forecolor backcolor | charmap emoticons adddate | codesample | link | sort-table | toc-nav';
   let removedMenuItems = 'newdocument, image, anchor';
   let fileMenuItems = 'preview | print';
   if (page === 'edit') {
@@ -428,6 +428,75 @@ export function getTinymceBaseConfig(page: string): object {
           btn ? btn.click() : editor.execCommand('mceSave');
         },
       });
+      // TABLE OF CONTENTS sidebar for in-editor navigation
+      editor.ui.registry.addSidebar('toc-sidebar', {
+        tooltip: 'Table of Contents',
+        icon: 'list-num-default',
+        onSetup: (api) => {
+          const sidebarEl = api.element();
+          sidebarEl.style.padding = '8px';
+          sidebarEl.style.overflowY = 'auto';
+          sidebarEl.innerHTML = '<p style="color:#999;font-size:0.9em;">Open to scan headings...</p>';
+          return () => { /* cleanup */ };
+        },
+        onShow: (api) => {
+          const sidebarEl = api.element();
+          const body = editor.getBody();
+          const headings = body.querySelectorAll('h1, h2, h3, h4, h5, h6');
+          if (headings.length === 0) {
+            sidebarEl.innerHTML = '<p style="color:#999;font-size:0.9em;">No headings found.</p>';
+            return;
+          }
+          const levels = Array.from(headings).map(h => parseInt(h.tagName.charAt(1), 10));
+          const minLevel = Math.min(...levels);
+          let html = '<div class="toc-editor-sidebar">';
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+          html += '<strong style="font-size:0.85em;">Table of Contents</strong>';
+          html += '</div>';
+          headings.forEach((heading, index) => {
+            const level = parseInt(heading.tagName.charAt(1), 10);
+            const text = heading.textContent?.trim() || '';
+            if (!text) return;
+            if (!heading.id) heading.id = `mce-toc-h-${index}`;
+            const indent = (level - minLevel) * 12;
+            const weight = level <= 2 ? 'bold' : 'normal';
+            const size = level <= 2 ? '0.85em' : '0.8em';
+            html += `<a href="#" data-toc-editor-target="${heading.id}" style="display:block;padding:3px 4px 3px ${indent + 4}px;font-weight:${weight};font-size:${size};color:inherit;text-decoration:none;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" onmouseover="this.style.backgroundColor='rgba(0,0,0,0.08)'" onmouseout="this.style.backgroundColor='transparent'">${escapeHTML(text)}</a>`;
+          });
+          html += '</div>';
+          sidebarEl.innerHTML = html;
+          // Attach click handlers
+          sidebarEl.querySelectorAll('[data-toc-editor-target]').forEach(link => {
+            link.addEventListener('click', (e) => {
+              e.preventDefault();
+              const targetId = (link as HTMLElement).dataset.tocEditorTarget;
+              const targetEl = body.querySelector(`#${CSS.escape(targetId)}`);
+              if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Move cursor to the heading
+                editor.selection.setCursorLocation(targetEl, 0);
+                editor.focus();
+              }
+            });
+          });
+        },
+        onHide: () => { /* nothing to clean up */ },
+      });
+      // Add a toolbar button to toggle the TOC sidebar
+      editor.ui.registry.addToggleButton('toc-nav', {
+        icon: 'list-num-default',
+        tooltip: 'Toggle Table of Contents',
+        onAction: () => {
+          editor.execCommand('ToggleSidebar', false, 'toc-sidebar');
+        },
+        onSetup: (api) => {
+          // The button state is managed by TinyMCE automatically for sidebar toggles
+          // but we need to return a noop cleanup function
+          api.setActive(false);
+          return () => {};
+        },
+      });
+
       // some shortcuts
       editor.addShortcut('ctrl+shift+d', 'add date/time at cursor', addDatetimeOnCursor);
       editor.addShortcut('ctrl+=', 'subscript', () => editor.execCommand('subscript'));
