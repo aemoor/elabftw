@@ -198,7 +198,7 @@ final class Filter
         // create base config for html5
         $config = HTMLPurifier_HTML5Config::createDefault();
         // allow only certain elements
-        $config->set('HTML.Allowed', 'div[class|style],br,p[class|style],sub,img[src|class|style|width|height],sup,strong,b,em,u,a[href],s,span[style],ul[style],li[style],ol[style],dl,dt,dd,blockquote,h1[class|style],h2[class|style],h3[class|style],h4[class|style],h5[class|style],h6[class|style],hr,table[style|data-table-sort|border],tr[style],td[style|colspan|rowspan],th[style|colspan|rowspan],code,source[src|type],video[src|controls|style|width|height],audio[src|controls],pre[class],details,summary,caption,figure,figcaption');
+        $config->set('HTML.Allowed', 'div[class|style],br,p[class|style],sub,img[src|class|style|width|height],sup,strong,b,em,u,a[href],s,span[style],ul[style],li[style],ol[style],dl,dt,dd,blockquote,h1[class|style],h2[class|style],h3[class|style],h4[class|style],h5[class|style],h6[class|style],hr,table[class|style|data-table-sort|data-spreadsheet|border],tr[style],td[style|colspan|rowspan],th[style|colspan|rowspan],code,source[src|type],video[src|controls|style|width|height],audio[src|controls],pre[class],details,summary,caption,figure,figcaption');
         $config->set('HTML.TargetBlank', true);
         // configure the cache for htmlpurifier
         $tmpDir = FsTools::getCacheFolder('purifier');
@@ -231,6 +231,7 @@ final class Filter
             'language-tcl',
             'language-vhdl',
             'language-yaml',
+            'elabftw-spreadsheet',
         ));
         // note: hyphens and word-break are not supported
         $config->set('CSS.AllowedProperties', array(
@@ -259,8 +260,10 @@ final class Filter
         $config->set('CSS.MaxImgLength', null);
         $config->set('HTML.MaxImgLength', null);
         // allow 'data-table-sort' attribute to indicate that a table shall be sortable by js
+        // allow 'data-spreadsheet' attribute to store inline spreadsheet data (base64-encoded JSON)
         if ($def = $config->maybeGetRawHTMLDefinition()) {
             $def->addAttribute('table', 'data-table-sort', 'Enum#true');
+            $def->addAttribute('table', 'data-spreadsheet', 'Text');
         }
 
         $purifier = new HTMLPurifier($config);

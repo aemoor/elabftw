@@ -1040,6 +1040,41 @@ tr:first-child td {
   100% { background-color: transparent; }
 }
 
+/* INLINE SPREADSHEET */
+.inline-spreadsheet-container {
+  min-height: 200px;
+  overflow: auto;
+}
+
+/* Styling for spreadsheet tables embedded in the body */
+table.elabftw-spreadsheet {
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 0.9em;
+
+  td, th {
+    border: 1px solid var(--secondary-muted, #dee2e6);
+    padding: 4px 8px;
+    min-width: 60px;
+  }
+
+  tr:nth-child(even) {
+    background-color: var(--zebrarow, rgba(0, 0, 0, 0.03));
+  }
+
+  /* Visual cue that this table is a spreadsheet (hover) */
+  &:hover {
+    outline: 2px dashed var(--primary, #29aeb9);
+    outline-offset: 2px;
+    cursor: pointer;
+  }
+}
+
+/* Ensure jspreadsheet dropdown menus inside the overlay render on top */
+.jss_container {
+  z-index: 10051 !important;
+}
+
 .item-info {
   padding-left: 20px;
 }
