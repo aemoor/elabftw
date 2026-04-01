@@ -19,24 +19,38 @@
         </a>
       </div>
 
-      {# Render folder hierarchy recursively #}
+      {# Render folder hierarchy recursively with collapsible parents #}
       {% macro renderFolderTree(folders, parentId, depth, currentFolderId) %}
         {% if folders[parentId] is defined %}
           {% for folder in folders[parentId] %}
-            <div class='ml-{{ depth > 0 ? 3 : 0 }} mb-1'>
-              <a href='experiments.php?folder={{ folder.id }}' class='text-decoration-none color-medium {{ currentFolderId == folder.id ? 'font-weight-bold' : '' }}'>
-                <i class='fas {{ folder.children_count > 0 ? 'fa-folder-open' : 'fa-folder' }} fa-fw mr-1'></i>{{ folder.name }}
-                {% if folder.experiments_count > 0 %}
-                  <span class='badge badge-secondary'>{{ folder.experiments_count }}</span>
+            <div class='ml-{{ depth > 0 ? 3 : 0 }} mb-1 folder-node' data-folder-id='{{ folder.id }}'>
+              <div class='d-flex align-items-center'>
+                {# Toggle caret for folders with children #}
+                {% if folder.children_count > 0 %}
+                  <span class='folder-toggle mr-1' data-action='toggle-folder-children' data-folder-id='{{ folder.id }}' role='button' tabindex='0' title='{{ 'Toggle visibility'|trans }}' style='cursor:pointer;width:16px;text-align:center'>
+                    <i class='fas fa-caret-down fa-fw fa-xs'></i>
+                  </span>
+                {% else %}
+                  <span class='mr-1' style='width:16px;display:inline-block'></span>
                 {% endif %}
-              </a>
-              {# Actions: rename and delete #}
-              <span class='ml-1 folder-actions' style='display:none'>
-                <span data-action='rename-folder' data-id='{{ folder.id }}' data-name='{{ folder.name|e('html_attr') }}' class='hl-hover-gray rounded p-1' title='{{ 'Rename'|trans }}'><i class='fas fa-pencil fa-xs'></i></span>
-                <span data-action='delete-folder' data-id='{{ folder.id }}' class='hl-hover-gray rounded p-1' title='{{ 'Delete'|trans }}'><i class='fas fa-trash-alt fa-xs'></i></span>
-              </span>
-              {# Recurse into children #}
-              {{ _self.renderFolderTree(folders, folder.id, depth + 1, currentFolderId) }}
+                <a href='experiments.php?folder={{ folder.id }}' class='text-decoration-none color-medium {{ currentFolderId == folder.id ? 'font-weight-bold' : '' }}'>
+                  <i class='fas {{ folder.children_count > 0 ? 'fa-folder-open' : 'fa-folder' }} fa-fw mr-1'></i>{{ folder.name }}
+                  {% if folder.experiments_count > 0 %}
+                    <span class='badge badge-secondary'>{{ folder.experiments_count }}</span>
+                  {% endif %}
+                </a>
+                {# Actions: rename and delete #}
+                <span class='ml-1 folder-actions' style='display:none'>
+                  <span data-action='rename-folder' data-id='{{ folder.id }}' data-name='{{ folder.name|e('html_attr') }}' class='hl-hover-gray rounded p-1' title='{{ 'Rename'|trans }}'><i class='fas fa-pencil fa-xs'></i></span>
+                  <span data-action='delete-folder' data-id='{{ folder.id }}' class='hl-hover-gray rounded p-1' title='{{ 'Delete'|trans }}'><i class='fas fa-trash-alt fa-xs'></i></span>
+                </span>
+              </div>
+              {# Collapsible children container #}
+              {% if folder.children_count > 0 %}
+                <div class='folder-children' data-parent-folder-id='{{ folder.id }}'>
+                  {{ _self.renderFolderTree(folders, folder.id, depth + 1, currentFolderId) }}
+                </div>
+              {% endif %}
             </div>
           {% endfor %}
         {% endif %}
