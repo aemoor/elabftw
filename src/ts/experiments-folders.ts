@@ -44,19 +44,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * Apply collapsed/expanded state to a single folder.
+   * Apply collapsed/expanded state to a single folder (caret + children + folder icon).
    */
   function applyFolderState(folderId: string, isCollapsed: boolean): void {
     const childrenDiv = document.querySelector(`.folder-children[data-parent-folder-id="${folderId}"]`) as HTMLElement;
     const toggle = document.querySelector(`.folder-toggle[data-folder-id="${folderId}"]`);
     if (!childrenDiv || !toggle) return;
 
+    // Find the folder icon in the same row
+    const folderNode = document.querySelector(`.folder-node[data-folder-id="${folderId}"]`);
+    const folderIcon = folderNode?.querySelector('.folder-icon');
+
     if (isCollapsed) {
       childrenDiv.style.display = 'none';
       toggle.querySelector('i')?.classList.replace('fa-caret-down', 'fa-caret-right');
+      folderIcon?.classList.replace('fa-folder-open', 'fa-folder');
     } else {
       childrenDiv.style.display = '';
       toggle.querySelector('i')?.classList.replace('fa-caret-right', 'fa-caret-down');
+      folderIcon?.classList.replace('fa-folder', 'fa-folder-open');
     }
   }
 
@@ -144,8 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Find the root ancestor and all ancestors of the favorite
     const rootAncestorId = getRootAncestorId(favoriteFolderId);
     const ancestorIds = new Set(getAncestorIds(favoriteFolderId));
-    // Also include the favorite itself (it might have children to expand)
-    ancestorIds.add(favoriteFolderId);
 
     // Collapse all root-level folders except the one containing the favorite
     document.querySelectorAll('#experimentsFoldersContent .folder-node').forEach((node: HTMLElement) => {
@@ -169,6 +173,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Expand all ancestors along the path to the favorite subfolder
     for (const ancestorId of ancestorIds) {
       collapsed.delete(ancestorId);
+    }
+
+    // Collapse subfolders *below* the favorite folder
+    const favChildrenDiv = document.querySelector(`.folder-children[data-parent-folder-id="${favoriteFolderId}"]`);
+    if (favChildrenDiv) {
+      favChildrenDiv.querySelectorAll('.folder-node').forEach((node: HTMLElement) => {
+        const childId = node.dataset.folderId;
+        if (!childId) return;
+        const hasChildren = document.querySelector(`.folder-children[data-parent-folder-id="${childId}"]`);
+        if (hasChildren) {
+          collapsed.add(childId);
+        }
+      });
     }
 
     saveCollapsedSet(collapsed);
@@ -202,12 +219,11 @@ document.addEventListener('DOMContentLoaded', () => {
     saveCollapsedSet(collapsed);
   }
 
-  // Apply stored state to all folders
+  // Apply stored state to all folders (collapsed get closed icon, expanded get open icon)
   document.querySelectorAll('.folder-toggle[data-folder-id]').forEach((toggle: HTMLElement) => {
     const folderId = toggle.dataset.folderId;
-    if (folderId && collapsed.has(folderId)) {
-      applyFolderState(folderId, true);
-    }
+    if (!folderId) return;
+    applyFolderState(folderId, collapsed.has(folderId));
   });
 
   // Toggle folder on click — registered via the global on() dispatcher

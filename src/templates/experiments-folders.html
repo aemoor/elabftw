@@ -34,7 +34,7 @@
                   <span class='mr-1' style='width:16px;display:inline-block'></span>
                 {% endif %}
                 <a href='experiments.php?folder={{ folder.id }}' class='text-decoration-none color-medium {{ currentFolderId == folder.id ? 'font-weight-bold' : '' }}'>
-                  <i class='fas {{ folder.children_count > 0 ? 'fa-folder-open' : 'fa-folder' }} fa-fw mr-1'></i>{{ folder.name }}
+                  <i class='fas fa-folder fa-fw mr-1 folder-icon'></i>{{ folder.name }}
                   {% if folder.experiments_count > 0 %}
                     <span class='badge badge-secondary'>{{ folder.experiments_count }}</span>
                   {% endif %}
