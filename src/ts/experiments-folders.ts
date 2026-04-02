@@ -11,13 +11,18 @@ import { on } from './handlers';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Only run on experiments page
-  if (!document.getElementById('experimentsFoldersSidebar')) {
+  const sidebar = document.getElementById('experimentsFoldersSidebar');
+  if (!sidebar) {
     return;
   }
 
   const ApiC = new Api();
 
   const COLLAPSED_KEY = 'collapsed-experiment-folders';
+
+  // Read the server-provided favorite folder id
+  const favoriteFolderIdAttr = sidebar.dataset.favoriteFolderId;
+  let favoriteFolderId: string | null = favoriteFolderIdAttr && favoriteFolderIdAttr !== '' ? favoriteFolderIdAttr : null;
 
   /**
    * Get the set of collapsed folder IDs from localStorage.
@@ -54,6 +59,126 @@ document.addEventListener('DOMContentLoaded', () => {
       toggle.querySelector('i')?.classList.replace('fa-caret-right', 'fa-caret-down');
     }
   }
+
+  /**
+   * Walk up from a folder node to find its root-level ancestor folder ID.
+   * Returns the folder ID itself if it's already at root level.
+   */
+  function getRootAncestorId(folderId: string): string {
+    let node = document.querySelector(`.folder-node[data-folder-id="${folderId}"]`) as HTMLElement;
+    if (!node) return folderId;
+    let rootId = folderId;
+    while (node) {
+      const parentChildren = node.parentElement?.closest('.folder-children') as HTMLElement;
+      if (parentChildren) {
+        // This node is inside a .folder-children container — its parent folder is the ancestor
+        const ancestorNode = parentChildren.closest('.folder-node') as HTMLElement;
+        if (ancestorNode && ancestorNode.dataset.folderId) {
+          rootId = ancestorNode.dataset.folderId;
+          node = ancestorNode;
+        } else {
+          break;
+        }
+      } else {
+        // This node is at root level
+        rootId = node.dataset.folderId || rootId;
+        break;
+      }
+    }
+    return rootId;
+  }
+
+  /**
+   * Collect all ancestor folder IDs for a given folder (not including itself).
+   */
+  function getAncestorIds(folderId: string): string[] {
+    const ancestors: string[] = [];
+    let node = document.querySelector(`.folder-node[data-folder-id="${folderId}"]`) as HTMLElement;
+    if (!node) return ancestors;
+    while (node) {
+      const parentChildren = node.parentElement?.closest('.folder-children') as HTMLElement;
+      if (parentChildren) {
+        const parentFolderId = parentChildren.dataset.parentFolderId;
+        if (parentFolderId) {
+          ancestors.push(parentFolderId);
+        }
+        node = parentChildren.closest('.folder-node') as HTMLElement;
+      } else {
+        break;
+      }
+    }
+    return ancestors;
+  }
+
+  /**
+   * Move the favorite folder's root ancestor to the top of the sidebar.
+   * For root-level favorites this moves the folder itself;
+   * for subfolder favorites this moves the containing root folder.
+   */
+  function pinFavoriteToTop(): void {
+    if (!favoriteFolderId) return;
+    const rootId = getRootAncestorId(favoriteFolderId);
+    const rootNode = document.querySelector(`.folder-node[data-folder-id="${rootId}"]`) as HTMLElement;
+    if (!rootNode) return;
+    const parent = rootNode.parentElement;
+    if (!parent) return;
+    // Only move root-level nodes (safety check)
+    if (parent.closest('.folder-children')) return;
+    parent.insertBefore(rootNode, parent.firstChild);
+  }
+
+  /**
+   * On first load, if there's a favorite folder set and no specific folder is
+   * selected in the URL, collapse all root folders except the one containing
+   * the favorite, and expand the full ancestor chain to the favorite.
+   */
+  function applyDefaultCollapseForFavorite(): void {
+    if (!favoriteFolderId) return;
+
+    const currentFolderId = new URLSearchParams(window.location.search).get('folder');
+    // If a specific folder is selected, don't override collapse state
+    if (currentFolderId && currentFolderId !== '0') return;
+
+    const collapsed = getCollapsedSet();
+
+    // Find the root ancestor and all ancestors of the favorite
+    const rootAncestorId = getRootAncestorId(favoriteFolderId);
+    const ancestorIds = new Set(getAncestorIds(favoriteFolderId));
+    // Also include the favorite itself (it might have children to expand)
+    ancestorIds.add(favoriteFolderId);
+
+    // Collapse all root-level folders except the one containing the favorite
+    document.querySelectorAll('#experimentsFoldersContent .folder-node').forEach((node: HTMLElement) => {
+      const folderId = node.dataset.folderId;
+      if (!folderId) return;
+      // Only operate on root-level folders
+      if (node.closest('.folder-children')) return;
+
+      if (folderId !== rootAncestorId) {
+        // Collapse root folders that don't contain the favorite
+        const childrenDiv = document.querySelector(`.folder-children[data-parent-folder-id="${folderId}"]`);
+        if (childrenDiv) {
+          collapsed.add(folderId);
+        }
+      } else {
+        // Expand the root ancestor of the favorite
+        collapsed.delete(folderId);
+      }
+    });
+
+    // Expand all ancestors along the path to the favorite subfolder
+    for (const ancestorId of ancestorIds) {
+      collapsed.delete(ancestorId);
+    }
+
+    saveCollapsedSet(collapsed);
+  }
+
+  // Pin favorite folder to top before applying collapse state
+  pinFavoriteToTop();
+
+  // Apply default collapse for favorite (collapse non-favorites)
+  applyDefaultCollapseForFavorite();
 
   // Restore collapsed state on load, but ensure the path to the active folder is expanded
   const collapsed = getCollapsedSet();
@@ -99,6 +224,20 @@ document.addEventListener('DOMContentLoaded', () => {
       applyFolderState(folderId, true);
     }
     saveCollapsedSet(current);
+  });
+
+  // Toggle favorite folder on star click
+  on('toggle-favorite-folder', (el: HTMLElement) => {
+    const folderId = el.dataset.id;
+    if (!folderId) return;
+
+    ApiC.patch('experiments_folders', {
+      action: 'toggle_favorite',
+      folder_id: parseInt(folderId, 10),
+    }).then(() => {
+      // Reload to reflect the new favorite state (reorder + collapse)
+      window.location.reload();
+    });
   });
 
   // Show folder action buttons on hover

@@ -76,9 +76,31 @@ Data is stored as base64-encoded JSON in a `data-spreadsheet` attribute on the `
 - Instance access: `instance[0]` gives the first worksheet
 - `selectionCopy: true` enables the drag-to-fill corner handle
 
+## Feature 7: Favorite Folder
+
+Per-user favorite folder that is pinned to the top of the sidebar and auto-expanded, while all other root folders are collapsed by default.
+
+**Files added:**
+- `src/sql/schema208.sql` — Adds `favorite_experiment_folder` column to `users` table with FK to `experiments_folders`
+- `src/sql/schema208-down.sql` — Rollback migration
+
+**Files modified:**
+- `src/Elabftw/SchemaVersionChecker.php` — Bumped `REQUIRED_SCHEMA` from 207 to 208
+- `src/Models/ExperimentsFolders.php` — Added `getFavoriteFolder()` and `toggleFavorite()` methods, extended `patch()` to handle `action: 'toggle_favorite'`
+- `src/Controllers/AbstractEntityController.php` — Pass `favoriteFolderId` to template render arrays (both `show()` and `edit()`)
+- `src/templates/experiments-folders.html` — Added `data-favorite-folder-id` attribute on sidebar, star icon (`fa-star`) per folder, passed `favoriteFolderId` through recursive macro
+- `src/ts/experiments-folders.ts` — Added `toggle-favorite-folder` action handler via `on()`, `pinFavoriteToTop()` DOM reordering, `applyDefaultCollapseForFavorite()` to collapse non-favorite root folders
+
+**Key technical decisions:**
+- Uses a column on the `users` table (not a junction table) because only one favorite per user is supported
+- Star toggle uses PATCH to `experiments_folders` endpoint with `{ action: 'toggle_favorite', folder_id: N }` in request body
+- Favorite folder is moved to top of DOM on page load before collapse state is applied
+- Default collapse only affects root-level folders; nested folders follow their parent's state
+
 ## Schema Migration Notes
 
 - `schema207.sql` uses `CREATE TABLE IF NOT EXISTS` and conditional `ALTER TABLE` for idempotent re-runs after partial failures
+- `schema208.sql` adds `favorite_experiment_folder` column with FK to `experiments_folders(id)` with `ON DELETE SET NULL`
 
 ## General Merge Notes
 

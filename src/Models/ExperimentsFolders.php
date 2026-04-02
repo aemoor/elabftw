@@ -157,6 +157,13 @@ final class ExperimentsFolders extends AbstractRest
     #[Override]
     public function patch(Action $action, array $params): array
     {
+        // Handle toggling favorite (no folder id needed in URL — uses current user)
+        if (isset($params['action']) && $params['action'] === 'toggle_favorite') {
+            $folderId = Filter::intOrNull($params['folder_id'] ?? null);
+            $this->toggleFavorite($folderId);
+            return array('favorite_experiment_folder' => $this->getFavoriteFolder());
+        }
+
         $this->canWriteOrExplode();
 
         // Handle moving to a different parent
@@ -289,6 +296,35 @@ final class ExperimentsFolders extends AbstractRest
         $req->bindValue(':team', $this->requester->userData['team'], PDO::PARAM_INT);
         $this->Db->execute($req);
         return $req->fetchAll();
+    }
+
+    /**
+     * Get the current user's favorite experiment folder id (or null)
+     */
+    public function getFavoriteFolder(): ?int
+    {
+        $sql = 'SELECT favorite_experiment_folder FROM users WHERE userid = :userid';
+        $req = $this->Db->prepare($sql);
+        $req->bindValue(':userid', $this->requester->userData['userid'], PDO::PARAM_INT);
+        $this->Db->execute($req);
+        $result = $req->fetchColumn();
+        return $result !== false && $result !== null ? (int) $result : null;
+    }
+
+    /**
+     * Toggle the favorite folder for the current user.
+     * If the folder is already the favorite, unset it; otherwise set it.
+     */
+    private function toggleFavorite(?int $folderId): void
+    {
+        $current = $this->getFavoriteFolder();
+        $newValue = ($current === $folderId) ? null : $folderId;
+
+        $sql = 'UPDATE users SET favorite_experiment_folder = :fav WHERE userid = :userid';
+        $req = $this->Db->prepare($sql);
+        $req->bindValue(':fav', $newValue, $newValue === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $req->bindValue(':userid', $this->requester->userData['userid'], PDO::PARAM_INT);
+        $this->Db->execute($req);
     }
 
     private function moveToParent(?int $parentId): bool

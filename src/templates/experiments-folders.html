@@ -1,6 +1,6 @@
 {# EXPERIMENTS FOLDER TREE - Sidebar for hierarchical experiment organization #}
 {% if Entity.entityType.value == 'experiments' and experimentsFoldersArr is defined %}
-<div id='experimentsFoldersSidebar' class='mb-3'>
+<div id='experimentsFoldersSidebar' class='mb-3' data-favorite-folder-id='{{ favoriteFolderId is defined and favoriteFolderId ? favoriteFolderId : '' }}'>
   <h3 title='{{ 'Toggle visibility'|trans }}' data-action='toggle-next' data-opened-icon='fa-caret-down' data-closed-icon='fa-caret-right' class='d-inline togglable-section-title' tabindex='0' role='button' aria-expanded='true' aria-controls='experimentsFoldersContent'>
     <i class='fas fa-caret-down mr-2 fa-fw'></i><i class='fas fa-folder-tree mr-1'></i> {{ 'Folders'|trans }}
   </h3>
@@ -20,7 +20,7 @@
       </div>
 
       {# Render folder hierarchy recursively with collapsible parents #}
-      {% macro renderFolderTree(folders, parentId, depth, currentFolderId) %}
+      {% macro renderFolderTree(folders, parentId, depth, currentFolderId, favoriteFolderId) %}
         {% if folders[parentId] is defined %}
           {% for folder in folders[parentId] %}
             <div class='ml-{{ depth > 0 ? 3 : 0 }} mb-1 folder-node' data-folder-id='{{ folder.id }}'>
@@ -39,6 +39,10 @@
                     <span class='badge badge-secondary'>{{ folder.experiments_count }}</span>
                   {% endif %}
                 </a>
+                {# Favorite star toggle #}
+                <span data-action='toggle-favorite-folder' data-id='{{ folder.id }}' class='ml-1 favorite-folder-star hl-hover-gray rounded p-1' title='{{ favoriteFolderId is defined and favoriteFolderId == folder.id ? 'Remove from favorites' : 'Set as favorite' }}' style='cursor:pointer'>
+                  <i class='{{ favoriteFolderId is defined and favoriteFolderId == folder.id ? 'fas' : 'far' }} fa-star fa-xs' style='color:{{ favoriteFolderId is defined and favoriteFolderId == folder.id ? '#f0ad4e' : '#999' }}'></i>
+                </span>
                 {# Actions: rename and delete #}
                 <span class='ml-1 folder-actions' style='display:none'>
                   <span data-action='rename-folder' data-id='{{ folder.id }}' data-name='{{ folder.name|e('html_attr') }}' class='hl-hover-gray rounded p-1' title='{{ 'Rename'|trans }}'><i class='fas fa-pencil fa-xs'></i></span>
@@ -48,7 +52,7 @@
               {# Collapsible children container #}
               {% if folder.children_count > 0 %}
                 <div class='folder-children' data-parent-folder-id='{{ folder.id }}'>
-                  {{ _self.renderFolderTree(folders, folder.id, depth + 1, currentFolderId) }}
+                  {{ _self.renderFolderTree(folders, folder.id, depth + 1, currentFolderId, favoriteFolderId) }}
                 </div>
               {% endif %}
             </div>
@@ -56,7 +60,7 @@
         {% endif %}
       {% endmacro %}
 
-      {{ _self.renderFolderTree(experimentsFoldersArr, '', 0, App.Request.query.get('folder')) }}
+      {{ _self.renderFolderTree(experimentsFoldersArr, '', 0, App.Request.query.get('folder'), favoriteFolderId is defined ? favoriteFolderId : null) }}
     </div>
 
     {# Create new folder form #}

@@ -1386,6 +1386,7 @@ CREATE TABLE `users` (
   `can_manage_compounds` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   `can_manage_inventory_locations` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   `theme_variant` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `favorite_experiment_folder` INT UNSIGNED NULL DEFAULT NULL,
   PRIMARY KEY (`userid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 
