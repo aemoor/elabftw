@@ -94,8 +94,10 @@ Per-user favorite folder that is pinned to the top of the sidebar and auto-expan
 **Key technical decisions:**
 - Uses a column on the `users` table (not a junction table) because only one favorite per user is supported
 - Star toggle uses PATCH to `experiments_folders` endpoint with `{ action: 'toggle_favorite', folder_id: N }` in request body
-- Favorite folder is moved to top of DOM on page load before collapse state is applied
-- Default collapse only affects root-level folders; nested folders follow their parent's state
+- Favorite folder's root ancestor is moved to top of DOM on page load before collapse state is applied
+- Works with both root-level and nested subfolder favorites: for subfolders, the entire ancestor chain is expanded while the containing root folder is pinned to the top
+- Subfolders below the favorite are collapsed by default
+- Folder icons toggle between `fa-folder` (closed) and `fa-folder-open` (expanded) based on collapse state, using a `.folder-icon` CSS class on the icon element for JS targeting
 
 ## Schema Migration Notes
 

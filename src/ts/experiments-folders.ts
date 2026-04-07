@@ -135,8 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /**
    * On first load, if there's a favorite folder set and no specific folder is
-   * selected in the URL, collapse all root folders except the one containing
-   * the favorite, and expand the full ancestor chain to the favorite.
+   * selected in the URL, expand the ancestor chain to the favorite and
+   * collapse subfolders below it.
    */
   function applyDefaultCollapseForFavorite(): void {
     if (!favoriteFolderId) return;
@@ -147,31 +147,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const collapsed = getCollapsedSet();
 
-    // Find the root ancestor and all ancestors of the favorite
+    // Expand the root ancestor of the favorite
     const rootAncestorId = getRootAncestorId(favoriteFolderId);
-    const ancestorIds = new Set(getAncestorIds(favoriteFolderId));
-
-    // Collapse all root-level folders except the one containing the favorite
-    document.querySelectorAll('#experimentsFoldersContent .folder-node').forEach((node: HTMLElement) => {
-      const folderId = node.dataset.folderId;
-      if (!folderId) return;
-      // Only operate on root-level folders
-      if (node.closest('.folder-children')) return;
-
-      if (folderId !== rootAncestorId) {
-        // Collapse root folders that don't contain the favorite
-        const childrenDiv = document.querySelector(`.folder-children[data-parent-folder-id="${folderId}"]`);
-        if (childrenDiv) {
-          collapsed.add(folderId);
-        }
-      } else {
-        // Expand the root ancestor of the favorite
-        collapsed.delete(folderId);
-      }
-    });
+    collapsed.delete(rootAncestorId);
 
     // Expand all ancestors along the path to the favorite subfolder
-    for (const ancestorId of ancestorIds) {
+    for (const ancestorId of getAncestorIds(favoriteFolderId)) {
       collapsed.delete(ancestorId);
     }
 
@@ -191,8 +172,86 @@ document.addEventListener('DOMContentLoaded', () => {
     saveCollapsedSet(collapsed);
   }
 
+  const OTHER_FOLDERS_KEY = 'other-folders-collapsed';
+
+  /**
+   * After pinning the favorite, wrap all remaining root-level folder nodes
+   * into a collapsible "Other folders" group that defaults to collapsed.
+   */
+  function wrapOtherFolders(): void {
+    if (!favoriteFolderId) return;
+
+    const rootAncestorId = getRootAncestorId(favoriteFolderId);
+
+    // Find the container that holds root-level folder nodes
+    // (the div.mt-2 inside #experimentsFoldersContent)
+    const container = document.querySelector('#experimentsFoldersContent .mt-2');
+    if (!container) return;
+
+    // Collect non-favorite root-level folder nodes
+    const otherNodes: HTMLElement[] = [];
+    container.querySelectorAll(':scope > .folder-node').forEach((node: HTMLElement) => {
+      if (node.dataset.folderId !== rootAncestorId) {
+        otherNodes.push(node);
+      }
+    });
+
+    if (otherNodes.length === 0) return;
+
+    // Check stored collapse state (default: collapsed)
+    const isCollapsed = localStorage.getItem(OTHER_FOLDERS_KEY) !== 'open';
+
+    // Build the "Other folders" wrapper
+    const wrapper = document.createElement('div');
+    wrapper.className = 'mb-1 other-folders-wrapper';
+    wrapper.innerHTML = `
+      <div class="d-flex align-items-center other-folders-header" style="cursor:pointer" role="button" tabindex="0">
+        <span class="mr-1" style="width:16px;text-align:center">
+          <i class="fas ${isCollapsed ? 'fa-caret-right' : 'fa-caret-down'} fa-fw fa-xs"></i>
+        </span>
+        <i class="fas ${isCollapsed ? 'fa-folder' : 'fa-folder-open'} fa-fw mr-1 color-medium"></i>
+        <span class="color-medium">Other folders</span>
+      </div>
+      <div class="other-folders-content ml-3" style="display:${isCollapsed ? 'none' : 'block'}"></div>
+    `;
+
+    const contentDiv = wrapper.querySelector('.other-folders-content') as HTMLElement;
+    // Move other folder nodes into the wrapper
+    otherNodes.forEach(node => contentDiv.appendChild(node));
+
+    // Insert wrapper after the favorite folder node
+    container.appendChild(wrapper);
+
+    // Toggle handler for the "Other folders" header
+    const header = wrapper.querySelector('.other-folders-header') as HTMLElement;
+    header.addEventListener('click', () => {
+      const content = wrapper.querySelector('.other-folders-content') as HTMLElement;
+      const caret = header.querySelector('.fa-caret-right, .fa-caret-down');
+      const folderIcon = header.querySelector('.fa-folder, .fa-folder-open');
+      const currentlyHidden = content.style.display === 'none';
+
+      content.style.display = currentlyHidden ? 'block' : 'none';
+      if (caret) {
+        caret.classList.replace(
+          currentlyHidden ? 'fa-caret-right' : 'fa-caret-down',
+          currentlyHidden ? 'fa-caret-down' : 'fa-caret-right',
+        );
+      }
+      if (folderIcon) {
+        folderIcon.classList.replace(
+          currentlyHidden ? 'fa-folder' : 'fa-folder-open',
+          currentlyHidden ? 'fa-folder-open' : 'fa-folder',
+        );
+      }
+      localStorage.setItem(OTHER_FOLDERS_KEY, currentlyHidden ? 'open' : 'collapsed');
+    });
+  }
+
   // Pin favorite folder to top before applying collapse state
   pinFavoriteToTop();
+
+  // Wrap non-favorite root folders in "Other folders" group
+  wrapOtherFolders();
 
   // Apply default collapse for favorite (collapse non-favorites)
   applyDefaultCollapseForFavorite();
