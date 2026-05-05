@@ -86,6 +86,13 @@ use Override;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport;
 
+use function implode;
+use function in_array;
+use function json_decode;
+use function sprintf;
+use function str_starts_with;
+use function trim;
+
 /**
  * For API V2 requests
  */
@@ -211,6 +218,7 @@ final class Apiv2Controller extends AbstractApiController
             $this->reqBody['owner'] = $this->Request->request->getInt('owner');
             $this->reqBody['canread_base'] = (BasePermissions::tryFrom($this->Request->request->getInt('canread_base')) ?? BasePermissions::Team)->value;
             $this->reqBody['canwrite_base'] = (BasePermissions::tryFrom($this->Request->request->getInt('canwrite_base')) ?? BasePermissions::User)->value;
+            $this->action = Action::tryFrom($this->Request->request->getString('action')) ?? Action::Create;
         }
         $id = $this->Model->postAction($this->action, $this->reqBody);
         return new Response('', Response::HTTP_CREATED, array('Location' => sprintf('%s/%s%d', Env::asUrl('SITE_URL'), $this->Model->getApiPath(), $id)));
@@ -330,7 +338,7 @@ final class Apiv2Controller extends AbstractApiController
                 $this->requester,
                 $this->Request->query->get('scope') === 'team',
             ),
-            ApiEndpoint::Users => new Users($this->id, $this->requester->team, $this->requester),
+            ApiEndpoint::Users => new Users($this->id, $this->requester->getTeam(), $this->requester),
         };
     }
 

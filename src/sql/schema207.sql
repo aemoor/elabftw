@@ -26,4 +26,9 @@ DEALLOCATE PREPARE stmt;
 CALL drop_fk_if_exists('experiments', 'folder_id');
 ALTER TABLE `experiments` ADD CONSTRAINT `fk_experiments_folder_id` FOREIGN KEY (`folder_id`) REFERENCES `experiments_folders`(`id`) ON DELETE SET NULL;
 
+-- Add booking cost tracking columns
+ALTER TABLE `items` ADD `booking_hourly_rate_notax` DECIMAL(10, 2) UNSIGNED NOT NULL DEFAULT 0.00;
+ALTER TABLE `items` ADD `booking_hourly_rate_tax` DECIMAL(10, 2) UNSIGNED NOT NULL DEFAULT 0.00;
+ALTER TABLE `items` ADD `booking_hourly_rate_currency` TINYINT UNSIGNED NOT NULL DEFAULT 0;
+
 UPDATE config SET conf_value = 207 WHERE conf_name = 'schema';
