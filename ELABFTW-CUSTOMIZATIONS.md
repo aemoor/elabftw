@@ -99,10 +99,49 @@ Per-user favorite folder that is pinned to the top of the sidebar and auto-expan
 - Subfolders below the favorite are collapsed by default
 - Folder icons toggle between `fa-folder` (closed) and `fa-folder-open` (expanded) based on collapse state, using a `.folder-icon` CSS class on the icon element for JS targeting
 
+## Feature 8: Folder Selection in Create Modal
+
+Adds a folder dropdown and inline folder creation to the experiment creation modal, so users can assign experiments to folders at creation time.
+
+**Files modified:**
+- `src/templates/create-new-modal.html` — Added folder select dropdown (`createNewFolderSelect`) with full_path options, "New folder" button with inline creation UI
+- `src/ts/create-new.ts` — `setTypeRadio()` shows/hides folder section based on entity type; inline folder creation via `ApiC.post('experiments_folders', ...)` with ID extraction from Location header
+- `src/Models/AbstractEntity.php` — After `create()`, checks for `folder_id` in request body and assigns experiment to folder via `ExperimentsFolders::assignExperiment()`
+
+**Key technical decisions:**
+- Uses `collectForm()` auto-collection of `name='folder_id'` select value
+- Folder assignment happens post-creation (not by modifying `create()` method signature)
+- Folder section only visible when entity type is `experiments`
+
+## Feature 9: "Other Folders" Collapsible Group
+
+Wraps non-favorite root-level folders into a collapsible "Other folders" group in the sidebar.
+
+**Files modified:**
+- `src/ts/experiments-folders.ts` — Added `wrapOtherFolders()` function that creates a DOM wrapper with localStorage persistence for collapse state
+
+## Feature 10: LabCollector LIMS Quick-Link Helper
+
+Adds a UI widget on the experiment edit page for quickly linking to entities in LabCollector LIMS. Supports two modes: adding as a URL-type extra field, or inserting a clickable link directly into the editor body.
+
+**URL pattern:** `http://bs-labcollect01.ethz.ch/moor/{type}.php?search=1&strict=on&by_id={id}`
+
+**Entity types:** Plasmid, Strain, Chemical, Sample, Antibody, Storage
+
+**Files modified:**
+- `src/templates/edit.html` — Added LabCollector helper section (experiments only) with entity type dropdown, ID input, "Add as field" and "Insert in text" buttons
+- `src/ts/edit.ts` — Added `add-labcollector-link` handler (reads metadata, adds URL extra field, patches back) and `insert-labcollector-link` handler (inserts hyperlink at cursor via `editor.setContent()`, supports both TinyMCE and markdown)
+
+**Key technical decisions:**
+- "Add as field" stores the link as a `url`-type extra field in experiment metadata JSON — no schema migration needed, works with existing search/filtering, renders as clickable link in view mode
+- "Insert in text" uses the existing `editor.setContent()` pattern to insert at cursor position
+- Page reloads after adding as field to re-render the metadata div (since the Metadata class instance isn't accessible from edit.ts)
+
 ## Schema Migration Notes
 
-- `schema207.sql` uses `CREATE TABLE IF NOT EXISTS` and conditional `ALTER TABLE` for idempotent re-runs after partial failures
-- `schema208.sql` adds `favorite_experiment_folder` column with FK to `experiments_folders(id)` with `ON DELETE SET NULL`
+- `schema207.sql` — Combined: experiment folders table + folder_id column (our additions) and booking cost columns (upstream). Uses `CREATE TABLE IF NOT EXISTS` and conditional `ALTER TABLE` for idempotent re-runs
+- `schema208.sql` — Upstream: adds `force_res_tpl` column to `teams` table
+- `schema209.sql` — Our addition (renumbered from 208 after upstream merge): adds `favorite_experiment_folder` column to `users` table with FK to `experiments_folders(id)` with `ON DELETE SET NULL`
 
 ## General Merge Notes
 
