@@ -128,6 +128,26 @@
     <button type='button' data-action='toggle-modal' data-target='fieldBuilderModal' class='btn btn-secondary' data-cy='addMetadataField'>{{ 'Add field'|trans }}</button>
     <button type='button' data-action='toggle-modal' data-target='fieldLoaderModal' class='ml-3 btn btn-ghost hl-hover-gray' data-cy='loadMetadataFields'>{{ 'Load fields'|trans }}</button>
   </div>
+  {% if Entity.entityType.value == 'experiments' %}
+  {# LabCollector quick-link helper #}
+  <div class='mt-4 p-3 border rounded' id='labcollectorHelper'>
+    <h6 class='mb-2'><i class='fas fa-link mr-1'></i>LabCollector Link</h6>
+    <div class='d-flex align-items-center flex-wrap'>
+      <select id='labcollectorType' class='form-control mr-2' style='max-width:160px' aria-label='Entity type'>
+        <option value='plasmids'>Plasmid</option>
+        <option value='strains'>Strain</option>
+        <option value='chemicals'>Chemical</option>
+        <option value='samples'>Sample</option>
+        <option value='antibodies'>Antibody</option>
+        <option value='storage'>Storage</option>
+      </select>
+      <input type='number' id='labcollectorId' class='form-control mr-2' style='max-width:100px' placeholder='ID' min='1' aria-label='LabCollector ID' />
+      <button type='button' class='btn btn-outline-secondary' data-action='add-labcollector-link'>
+        <i class='fas fa-plus mr-1'></i>Add
+      </button>
+    </div>
+  </div>
+  {% endif %}
 </div>
 <hr>
 

@@ -166,6 +166,44 @@ if (mode === 'edit') {
     });
   });
 
+  // LABCOLLECTOR LINK HELPER
+  on('add-labcollector-link', () => {
+    const typeSelect = document.getElementById('labcollectorType') as HTMLSelectElement;
+    const idInput = document.getElementById('labcollectorId') as HTMLInputElement;
+    const lcType = typeSelect.value;
+    const lcId = idInput.value.trim();
+    if (!lcId) {
+      idInput.classList.add('is-invalid');
+      return;
+    }
+    idInput.classList.remove('is-invalid');
+    const url = `http://bs-labcollect01.ethz.ch/moor/${lcType}.php?search=1&strict=on&by_id=${lcId}`;
+    const label = typeSelect.selectedOptions[0].textContent;
+    const fieldName = `LabCollector ${label} #${lcId}`;
+
+    // Get current metadata, add new url field, patch back
+    ApiC.getJson(`${entity.type}/${entity.id}`).then(json => {
+      let metadata = json.metadata ? JSON.parse(json.metadata) : {};
+      if (!metadata.extra_fields) {
+        metadata.extra_fields = {};
+      }
+      // determine next position
+      const positions = Object.values(metadata.extra_fields).map((f: {position?: number}) => f.position ?? 0);
+      const nextPos = positions.length > 0 ? Math.max(...positions) + 1 : 0;
+      metadata.extra_fields[fieldName] = {
+        type: 'url',
+        value: url,
+        description: '',
+        position: nextPos,
+        group_id: null,
+      };
+      return ApiC.patch(`${entity.type}/${entity.id}`, {metadata: JSON.stringify(metadata)});
+    }).then(() => {
+      // reload the page to show the new extra field
+      window.location.reload();
+    });
+  });
+
   // REPLACE UPLOADED FILE
   // this should be in uploads but there is no good way so far to interact with the two editors there
   document.getElementById('filesDiv').addEventListener('submit', event => {
