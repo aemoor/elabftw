@@ -204,6 +204,30 @@ if (mode === 'edit') {
     });
   });
 
+  // LABCOLLECTOR INSERT IN TEXT
+  on('insert-labcollector-link', () => {
+    const typeSelect = document.getElementById('labcollectorType') as HTMLSelectElement;
+    const idInput = document.getElementById('labcollectorId') as HTMLInputElement;
+    const lcType = typeSelect.value;
+    const lcId = idInput.value.trim();
+    if (!lcId) {
+      idInput.classList.add('is-invalid');
+      return;
+    }
+    idInput.classList.remove('is-invalid');
+    const url = `http://bs-labcollect01.ethz.ch/moor/${lcType}.php?search=1&strict=on&by_id=${lcId}`;
+    const label = typeSelect.selectedOptions[0].textContent;
+    const linkText = `LabCollector ${label} #${lcId}`;
+    let content: string;
+    if (editor.type === 'md') {
+      content = `[${linkText}](${url})`;
+    } else {
+      content = `<a href="${url}" target="_blank">${linkText}</a>`;
+    }
+    editor.setContent(content);
+    idInput.value = '';
+  });
+
   // REPLACE UPLOADED FILE
   // this should be in uploads but there is no good way so far to interact with the two editors there
   document.getElementById('filesDiv').addEventListener('submit', event => {
